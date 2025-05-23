@@ -40,6 +40,14 @@ resource "aws_api_gateway_rest_api" "api" {
   name = "${local.name}-api"
 }
 
+# OPTIONS method for CORS
+resource "aws_api_gateway_method" "options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_rest_api.api.root_resource_id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
 resource "aws_api_gateway_method" "get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_rest_api.api.root_resource_id
@@ -52,6 +60,16 @@ resource "aws_api_gateway_method" "post" {
   resource_id   = aws_api_gateway_rest_api.api.root_resource_id
   http_method   = "POST"
   authorization = "NONE"
+}
+
+# OPTIONS integration
+resource "aws_api_gateway_integration" "options" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_rest_api.api.root_resource_id
+  http_method             = "OPTIONS"
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.backend.invoke_arn
 }
 
 resource "aws_api_gateway_integration" "get" {
@@ -85,6 +103,7 @@ resource "aws_api_gateway_deployment" "api" {
   depends_on = [
     aws_api_gateway_integration.get,
     aws_api_gateway_integration.post,
+    aws_api_gateway_integration.options,
   ]
 }
 

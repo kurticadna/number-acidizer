@@ -90,7 +90,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             TableName: TABLE_NAME,
             Key: { id: COUNTER_ID },
             UpdateExpression: 'SET #value = if_not_exists(#value, :zero) + :one',
-            ConditionExpression: 'if_not_exists(#value, :zero) < :max',
+            ConditionExpression: '#value < :max OR attribute_not_exists(#value)',
             ExpressionAttributeNames: { '#value': 'value' },
             ExpressionAttributeValues: {
               ':one': 1,
@@ -129,7 +129,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             TableName: TABLE_NAME,
             Key: { id: COUNTER_ID },
             UpdateExpression: 'SET #value = if_not_exists(#value, :zero) - :one',
-            ConditionExpression: 'if_not_exists(#value, :zero) > :min',
+            ConditionExpression: '#value > :min',
             ExpressionAttributeNames: { '#value': 'value' },
             ExpressionAttributeValues: {
               ':one': 1,

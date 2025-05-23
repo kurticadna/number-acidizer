@@ -33,80 +33,25 @@ locals {
   name_prefix = "acidizer-${var.environment}"
 }
 
-# ECR Repository
-resource "aws_ecr_repository" "backend" {
+# REFERENCE existing ECR repository (don't create)
+data "aws_ecr_repository" "backend" {
   name = "${local.name_prefix}-backend"
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
-# DynamoDB Table
-resource "aws_dynamodb_table" "counter" {
-  name         = "${local.name_prefix}-counter"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-
-  attribute {
-    name = "id"
-    type = "S"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
+# REFERENCE existing DynamoDB table (don't create)
+data "aws_dynamodb_table" "counter" {
+  name = "${local.name_prefix}-counter"
 }
 
-# IAM Role for Lambda
-resource "aws_iam_role" "lambda_role" {
+# REFERENCE existing IAM role (don't create)
+data "aws_iam_role" "lambda_role" {
   name = "${local.name_prefix}-lambda-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "lambda.amazonaws.com"
-      }
-    }]
-  })
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
-# Lambda basic execution policy
-resource "aws_iam_role_policy_attachment" "lambda_basic" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  role       = aws_iam_role.lambda_role.name
-}
-
-# DynamoDB policy for Lambda
-resource "aws_iam_role_policy" "lambda_dynamodb" {
-  name = "${local.name_prefix}-lambda-dynamodb-policy"
-  role = aws_iam_role.lambda_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:UpdateItem"
-      ]
-      Resource = aws_dynamodb_table.counter.arn
-    }]
-  })
-}
-
-# Lambda Function
+# Lambda Function (safe to update)
 resource "aws_lambda_function" "backend" {
   function_name = "${local.name_prefix}-backend"
-  role          = aws_iam_role.lambda_role.arn
+  role          = data.aws_iam_role.lambda_role.arn
   package_type  = "Image"
   image_uri     = var.lambda_image_uri
 
@@ -115,18 +60,13 @@ resource "aws_lambda_function" "backend" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.counter.name
+      DYNAMODB_TABLE_NAME = data.aws_dynamodb_table.counter.name
       ENVIRONMENT         = var.environment
     }
   }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_basic,
-    aws_iam_role_policy.lambda_dynamodb,
-  ]
 }
 
-# API Gateway
+# API Gateway (safe to manage)
 resource "aws_api_gateway_rest_api" "api" {
   name        = "${local.name_prefix}-api"
   description = "API for Number Acidizer"
@@ -182,12 +122,18 @@ resource "aws_lambda_permission" "api_gateway" {
 # API Gateway Deployment
 resource "aws_api_gateway_deployment" "api_deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  stage_name  = var.environment
 
   depends_on = [
     aws_api_gateway_integration.get_integration,
     aws_api_gateway_integration.post_integration,
   ]
+}
+
+# API Gateway Stage
+resource "aws_api_gateway_stage" "api_stage" {
+  deployment_id = aws_api_gateway_deployment.api_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  stage_name    = var.environment
 }
 
 # Outputs
@@ -198,12 +144,12 @@ output "api_gateway_url" {
 
 output "ecr_repository_url" {
   description = "URL of the ECR repository"
-  value       = aws_ecr_repository.backend.repository_url
+  value       = data.aws_ecr_repository.backend.repository_url
 }
 
 output "dynamodb_table_name" {
   description = "Name of the DynamoDB table"
-  value       = aws_dynamodb_table.counter.name
+  value       = data.aws_dynamodb_table.counter.name
 }
 
 output "lambda_function_name" {

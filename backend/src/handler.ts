@@ -27,6 +27,13 @@ const corsHeaders = {
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: ''
+        };
+      }
     // GET: Return current value
     if (event.httpMethod === 'GET') {
       const result = await docClient.send(new GetCommand({
@@ -45,6 +52,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         body: JSON.stringify(response)
       };
     }
+
 
     // POST: Increment or decrement
     if (event.httpMethod === 'POST') {

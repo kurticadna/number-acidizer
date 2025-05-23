@@ -93,11 +93,17 @@ jobs:
           aws iam create-role --role-name acidizer-$ENV-lambda-role --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}' 2>/dev/null || true
           aws iam put-role-policy --role-name acidizer-$ENV-lambda-role --policy-name acidizer-$ENV-lambda-policy --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Resource":"arn:aws:logs:*:*:*"},{"Effect":"Allow","Action":["dynamodb:GetItem","dynamodb:UpdateItem"],"Resource":"arn:aws:dynamodb:us-east-1:*:table/acidizer-'$ENV'-counter"}]}' 2>/dev/null || true
 
-          # Import existing resources to terraform
+          # Check if Lambda exists and delete it if so (force recreate)
+          if aws lambda get-function --function-name acidizer-$ENV-backend 2>/dev/null; then
+            echo "Lambda function exists, deleting to recreate..."
+            aws lambda delete-function --function-name acidizer-$ENV-backend
+            sleep 10
+          fi
+
+          # Import existing resources to terraform (except Lambda)
           terraform import aws_ecr_repository.backend acidizer-$ENV-backend 2>/dev/null || true
           terraform import aws_dynamodb_table.counter acidizer-$ENV-counter 2>/dev/null || true
           terraform import aws_iam_role.lambda_role acidizer-$ENV-lambda-role 2>/dev/null || true
-          terraform import aws_lambda_function.backend acidizer-$ENV-backend 2>/dev/null || true
 
       - name: Deploy backend infrastructure
         working-directory: ./infrastructure

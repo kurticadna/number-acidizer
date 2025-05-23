@@ -61,7 +61,11 @@ jobs:
             echo "ecr_repo=acidizer-backend-dev" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup AWS resources
+      - name: Initialize Terraform
+        working-directory: ./infrastructure
+        run: terraform init
+
+      - name: Setup AWS resources and import existing ones
         working-directory: ./infrastructure
         run: |
           chmod +x setup.sh

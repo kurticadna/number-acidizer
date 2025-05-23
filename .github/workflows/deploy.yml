@@ -61,6 +61,12 @@ jobs:
             echo "ecr_repo=acidizer-backend-dev" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup AWS resources
+        working-directory: ./infrastructure
+        run: |
+          chmod +x setup.sh
+          ./setup.sh
+
       - name: Build and push Docker image
         working-directory: ./backend
         env:
@@ -103,7 +109,7 @@ jobs:
           sleep 30
 
           # Get API URL
-          API_URL=$(terraform output -raw api_gateway_url)
+          API_URL=$(terraform output -raw api_url)
           echo "🌐 API deployed at: $API_URL"
 
           # Test GET request

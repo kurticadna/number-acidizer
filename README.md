@@ -31,5 +31,11 @@ The application is designed to handle concurrent counter operations with ACID co
 
 This project leverages AWS Lambda for serverless backend functions, DynamoDB for reliable data persistence, and API Gateway for REST API management with built-in throttling.
 
+## Git Management
 
+Branching Strategy: The project uses two primary branches: main and dev.
+
+dev Branch: This branch is used for active development. All new features, bug fixes, and changes are implemented and tested here before being merged into the main branch.
+
+main Branch: The main branch represents the stable production version of the project. Only code that has been fully tested and verified in the dev branch is merged into main.
 

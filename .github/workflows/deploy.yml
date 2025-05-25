@@ -168,23 +168,7 @@ jobs:
 
           echo "✅ Frontend deployed to S3: $FRONTEND_BUCKET"
 
-      # Step 5: Invalidate CloudFront cache
-      - name: Invalidate CloudFront cache
-        working-directory: ./infrastructure
-        run: |
-          FRONTEND_BUCKET=$(terraform output -raw frontend_bucket)
-
-          # Find CloudFront distribution for this bucket (get first match only)
-          CLOUDFRONT_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, '$FRONTEND_BUCKET')].Id" --output text | head -n1)
-
-          if [[ -n "$CLOUDFRONT_ID" && "$CLOUDFRONT_ID" != "None" ]]; then
-            echo "♻️ Invalidating CloudFront cache: $CLOUDFRONT_ID"
-            aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*"
-          else
-            echo "⚠️ CloudFront distribution not found - cache invalidation skipped"
-          fi
-
-      # Step 6: Test deployment
+      # Step 5: Test deployment
       - name: Test deployment
         working-directory: ./infrastructure
         run: |

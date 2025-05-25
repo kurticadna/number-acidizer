@@ -23,13 +23,9 @@ This project leverages AWS Lambda for serverless backend functions, DynamoDB for
 ## Project structure
 
 number-acidizer/
-├── backend/           # Lambda function code
-
-├── frontend/          # React/Next.js application  
-
-├── infrastructure/    # Terraform configuration
-
-├── .github/workflows/ # CI/CD pipeline
-
-└── README.md         # This file
+├── backend/           - Lambda function code
+├── frontend/          - React/Next.js application  
+├── infrastructure/    - Terraform configuration
+├── .github/workflows/ - CI/CD pipeline
+└── README.md         - This file
 

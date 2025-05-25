@@ -24,3 +24,5 @@ Thumbs.db
 test-handler.js
 
 .history/
+
+*.next/

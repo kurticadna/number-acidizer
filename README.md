@@ -2,6 +2,7 @@
 
 This project is designed to manage a shared global counter through a web interface. The system consists of a REST API backend and a React-based frontend. The backend is responsible for receiving, storing, and managing counter operations (increment/decrement) with ACID guarantees, while the frontend allows users to interact with the counter and see real-time updates across multiple devices and browser tabs.
 
+
 ## Project structure
 
 ```
@@ -102,7 +103,7 @@ Expected: 400 Bad Request
 - Test multiple rapid clicks across tabs
 - Verify: Each click registers exactly once
 
-## 
+## How to continuously integrate updates in a globally distributed high volume system.
 
 For a simple counter app scaling to global high volume, I'd start with the basics and evolve the deployment strategy as needed. Initially, I'd use GitHub Actions with environment promotion, deploy to staging, run ACID compliance tests automatically, and if they pass, promote to production with blue/green deployment using Route53 weighted routing. As we scale globally, I'd add regional deployments starting with non-main regions first since they have lower traffic, monitor our ACID guarantees for 15-20 minutes, than roll out to our main region.
 

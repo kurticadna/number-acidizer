@@ -8,10 +8,12 @@ export const NumberAcidizer = () => {
   const displayCount = useCounterStore((state) => state.displayCount)
   const isLoading = useCounterStore((state) => state.isLoading)
   const error = useCounterStore((state) => state.error)
+  const isInitialized = useCounterStore((state) => state.isInitialized)
   const setCount = useCounterStore((state) => state.setCount)
   const setDisplayCount = useCounterStore((state) => state.setDisplayCount)
   const setLoading = useCounterStore((state) => state.setLoading)
   const setError = useCounterStore((state) => state.setError)
+  const setInitialized = useCounterStore((state) => state.setInitialized)
 
   const animationRef = useRef<number>()
 
@@ -51,16 +53,22 @@ export const NumberAcidizer = () => {
         setError(null)
         const { count } = await api.getCount()
         setCount(count)
-        if (displayCount === 0) setDisplayCount(count)
+        if (!isInitialized) {
+          setDisplayCount(count)
+          setInitialized(true)
+        }
       } catch (err) {
         setError('Failed to fetch count')
+        if (!isInitialized) {
+          setInitialized(true)
+        }
       }
     }
 
     fetchCount()
     const interval = setInterval(fetchCount, 7000)
     return () => clearInterval(interval)
-  }, [setCount, setDisplayCount, setError, displayCount])
+  }, [setCount, setDisplayCount, setError, setInitialized, isInitialized])
 
   const handleAction = async (action: 'increment' | 'decrement') => {
     if (isLoading) return
@@ -75,6 +83,15 @@ export const NumberAcidizer = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!isInitialized) {
+    return (
+      <div className="font-montserrat min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 border-t-transparent"></div>
+        <p className="mt-6 text-gray-700 text-lg">Loading...</p>
+      </div>
+    )
   }
 
   return (

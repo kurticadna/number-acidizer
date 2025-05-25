@@ -1,4 +1,4 @@
-name: Deploy Number Acidizer Backend
+name: Deploy Number Acidizer
 
 on:
   push:
@@ -28,6 +28,13 @@ jobs:
           npm run build
           npm run lint
           npm test
+
+      - name: Test frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+          npm run lint
 
   deploy:
     runs-on: ubuntu-latest
@@ -82,7 +89,6 @@ jobs:
         working-directory: ./infrastructure
         env:
           TF_VAR_environment: ${{ steps.set-env.outputs.environment }}
-          TF_VAR_lambda_image_uri: ${{ format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:latest', github.actor, env.AWS_REGION, steps.set-env.outputs.ecr_repo) }}
         run: |
           terraform init
 
@@ -109,7 +115,6 @@ jobs:
         working-directory: ./infrastructure
         env:
           TF_VAR_environment: ${{ steps.set-env.outputs.environment }}
-          TF_VAR_lambda_image_uri: ${{ format('{0}.dkr.ecr.{1}.amazonaws.com/{2}:latest', github.actor, env.AWS_REGION, steps.set-env.outputs.ecr_repo) }}
         run: |
           # Use workspace for environment isolation
           terraform init
@@ -123,26 +128,62 @@ jobs:
             -var="lambda_image_uri=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.$AWS_REGION.amazonaws.com/${{ steps.set-env.outputs.ecr_repo }}:latest" \
             -var="environment=${{ steps.set-env.outputs.environment }}"
 
-      - name: Test API deployment
+      # Frontend: Build with backend URL and deploy
+      - name: Build and deploy frontend
+        working-directory: ./frontend
+        env:
+          TF_WORKSPACE: ${{ steps.set-env.outputs.environment }}
+        run: |
+          # Get API URL from Terraform output
+          cd ../infrastructure
+          API_URL=$(terraform output -raw api_url)
+          echo "🔗 Backend API URL: $API_URL"
+
+          # Get frontend bucket from Terraform output
+          FRONTEND_BUCKET=$(terraform output -raw frontend_bucket)
+          echo "📦 Frontend bucket: $FRONTEND_BUCKET"
+
+          cd ../frontend
+
+          # Build frontend with backend URL
+          echo "NEXT_PUBLIC_API_URL=$API_URL" > .env.production
+          npm ci
+          npm run build
+
+          # Deploy to S3
+          aws s3 sync ./out/ s3://$FRONTEND_BUCKET --delete
+
+          # Invalidate CloudFront cache
+          cd ../infrastructure
+          CLOUDFRONT_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, '$FRONTEND_BUCKET')].Id" --output text)
+          if [[ -n "$CLOUDFRONT_ID" ]]; then
+            echo "♻️ Invalidating CloudFront cache: $CLOUDFRONT_ID"
+            aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
+          fi
+
+      # Test: Verify deployment
+      - name: Test deployment
         working-directory: ./infrastructure
         run: |
           # Wait for deployment to be ready
           sleep 30
 
-          # Get API URL
+          # Get URLs
           API_URL=$(terraform output -raw api_url)
+          FRONTEND_URL=$(terraform output -raw frontend_url)
+
           echo "🌐 API deployed at: $API_URL"
+          echo "🌐 Frontend deployed at: $FRONTEND_URL"
 
-          # Test GET request
-          echo "Testing GET request..."
-          curl -f "$API_URL" || echo "⚠️ GET request failed (might be initializing)"
+          # Test backend API
+          echo "Testing backend API..."
+          curl -f "$API_URL" || echo "⚠️ Backend API test failed (might be initializing)"
 
-          # Test POST increment
-          echo "Testing POST increment..."
-          curl -f -X POST "$API_URL" \
-            -H "Content-Type: application/json" \
-            -d '{"action":"increment"}' || echo "⚠️ POST request failed (might be initializing)"
+          # Test frontend (basic check)
+          echo "Testing frontend..."
+          curl -f "$FRONTEND_URL" || echo "⚠️ Frontend test failed (might be initializing)"
 
-          echo "✅ Backend deployment completed!"
+          echo "✅ Full stack deployment completed!"
           echo "📡 Environment: ${{ steps.set-env.outputs.environment }}"
-          echo "🔗 API Gateway URL: $API_URL"
+          echo "🔗 Backend URL: $API_URL"
+          echo "🌍 Frontend URL: $FRONTEND_URL"

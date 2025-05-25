@@ -74,24 +74,24 @@ wait
 Verify: Net change is 0
 
 ### Test 3: Boundary race conditions
- Set counter to 999,999,999, then try 10 concurrent increments
+ Set counter to 1, then try 10 concurrent decrements
  Expected: Only 1 succeeds, others fail gracefully
 Boundary Condition Tests
-```
-curl -X POST $API_URL -d '{"action":"decrement"}' # when count = 0 ```
-Expected: Error, count stays 0
+```curl -X POST $API_URL -d '{"action":"decrement"}' # when count = 0 ```
+Expected: Error, count stays 0```
 
 ### Test 4: Burst requests
-for i in {1..100}; do
+
+```for i in {1..100}; do
   curl -X POST $API_URL -d '{"action":"increment"}'
-done
-- Expected: Some requests get 429 (rate limited)
+done```
+Expected: Some requests get 429 (rate limited)
 
-# Test 5: Invalid action
-curl -X POST $API_URL -d '{"action":"incrementtt"'
-- Expected: 400 Bad Request
+### Test 5: Invalid action
+```curl -X POST $API_URL -d '{"action":"incrementtt"' ````
+Expected: 400 Bad Request
 
-# Test 6: Cross-Tab Sync Tests
+### Test 6: Cross-Tab Sync Tests
 - Open 5 tabs, click increment in tab 1
 - Verify: All tabs show updated number within 7 seconds
 

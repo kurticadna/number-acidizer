@@ -2,8 +2,8 @@
 
 This project is designed to manage a shared global counter through a web interface. The system consists of a REST API backend and a React-based frontend. The backend is responsible for receiving, storing, and managing counter operations (increment/decrement) with ACID guarantees, while the frontend allows users to interact with the counter and see real-time updates across multiple devices and browser tabs.
 
-## 🔗 Backend URL: https://tfu5i6oq2k.execute-api.us-east-1.amazonaws.com/prod
-## 🌍 Frontend URL: https://dkjb99jlckan7.cloudfront.net
+### 🔗 Backend URL: https://tfu5i6oq2k.execute-api.us-east-1.amazonaws.com/prod
+### 🌍 Frontend URL: https://dkjb99jlckan7.cloudfront.net
 
 
 ## Project structure

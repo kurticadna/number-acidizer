@@ -85,8 +85,7 @@ Expected: Error, count stays 0
 
 ### Test 4: Burst requests
 
-```for i in {1..100}; do
-  curl -X POST $API_URL -d '{"action":"increment"}'
+```for i in {1..100}; do curl -X POST $API_URL -d '{"action":"increment"}'
 done
 ```
 Expected: Some requests get 429 (rate limited)

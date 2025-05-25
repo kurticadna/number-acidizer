@@ -77,8 +77,10 @@ Verify: Net change is 0
  Set counter to 1, then try 10 concurrent decrements
  Expected: Only 1 succeeds, others fail gracefully
 Boundary Condition Tests
-```curl -X POST $API_URL -d '{"action":"decrement"}' # when count = 0 ```
-Expected: Error, count stays 0```
+
+```curl -X POST $API_URL -d '{"action":"decrement"}' # 
+when count = 0 ```
+Expected: Error, count stays 0
 
 ### Test 4: Burst requests
 
@@ -88,7 +90,7 @@ done```
 Expected: Some requests get 429 (rate limited)
 
 ### Test 5: Invalid action
-```curl -X POST $API_URL -d '{"action":"incrementtt"' ````
+```curl -X POST $API_URL -d '{"action":"incrementtt"' ```
 Expected: 400 Bad Request
 
 ### Test 6: Cross-Tab Sync Tests

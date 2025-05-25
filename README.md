@@ -54,15 +54,15 @@ Implementation-wise, it's really straightforward because Cognito integrates dire
 
 Here are some of the ACID compliance tests I've been running from my terminal:
 
-- Test 1: Concurrent increments
-- Expected: All requests succeed, counter increases by exact number of requests
+### Test 1: Concurrent increments
+ Expected: All requests succeed, counter increases by exact number of requests
 for i in {1..100}; do
   curl -X POST $API_URL -d '{"action":"increment"}' &
 done
 wait
-- Verify: Counter increased by exactly 100
+Verify: Counter increased by exactly 100
 
-- Test 2: Mixed concurrent operations
+### Test 2: Mixed concurrent operations
 for i in {1..50}; do
   curl -X POST $API_URL -d '{"action":"increment"}' &
   curl -X POST $API_URL -d '{"action":"decrement"}' &

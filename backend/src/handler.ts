@@ -28,12 +28,12 @@ const corsHeaders = {
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     if (event.httpMethod === 'OPTIONS') {
-        return {
-          statusCode: 200,
-          headers: corsHeaders,
-          body: ''
-        };
-      }
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: ''
+      };
+    }
     // GET: Return current value
     if (event.httpMethod === 'GET') {
       const result = await docClient.send(new GetCommand({
@@ -53,7 +53,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       };
     }
 
-
     // POST: Increment or decrement
     if (event.httpMethod === 'POST') {
       // Input validation
@@ -70,7 +69,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       try {
         const parsed = JSON.parse(event.body) as unknown;
 
-        // Type guard for request body
         if (!isValidRequestBody(parsed)) {
           const response: ApiResponse = { success: false, error: 'Invalid action. Use increment or decrement' };
           return {
@@ -94,15 +92,15 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
       if (action === 'increment') {
         try {
+          // FIXED: Use atomic ADD operation with proper boundary check
           const result = await docClient.send(new UpdateCommand({
             TableName: TABLE_NAME,
             Key: { id: COUNTER_ID },
-            UpdateExpression: 'SET #value = if_not_exists(#value, :zero) + :one',
-            ConditionExpression: '#value < :max OR attribute_not_exists(#value)',
+            UpdateExpression: 'ADD #value :increment',
+            ConditionExpression: 'attribute_not_exists(#value) OR #value < :max',
             ExpressionAttributeNames: { '#value': 'value' },
             ExpressionAttributeValues: {
-              ':one': 1,
-              ':zero': 0,
+              ':increment': 1,
               ':max': 1000000000
             },
             ReturnValues: 'ALL_NEW'
@@ -136,12 +134,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           const result = await docClient.send(new UpdateCommand({
             TableName: TABLE_NAME,
             Key: { id: COUNTER_ID },
-            UpdateExpression: 'SET #value = if_not_exists(#value, :zero) - :one',
-            ConditionExpression: '#value > :min',
+            UpdateExpression: 'ADD #value :decrement',
+            ConditionExpression: 'attribute_exists(#value) AND #value > :min',
             ExpressionAttributeNames: { '#value': 'value' },
             ExpressionAttributeValues: {
-              ':one': 1,
-              ':zero': 0,
+              ':decrement': -1,
               ':min': 0
             },
             ReturnValues: 'ALL_NEW'

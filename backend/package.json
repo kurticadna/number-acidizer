@@ -1,0 +1,28 @@
+{
+    "name": "acidizer-backend",
+    "version": "1.0.0",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "build": "tsc",
+        "test": "echo \"Tests coming soon\" && exit 0",
+        "lint": "eslint src/**/*.ts",
+        "lint:fix": "eslint src/**/*.ts --fix",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "@aws-sdk/client-dynamodb": "^3.490.0",
+        "@aws-sdk/lib-dynamodb": "^3.490.0"
+    },
+    "devDependencies": {
+        "@types/aws-lambda": "^8.10.131",
+        "@types/node": "^20.10.6",
+        "@typescript-eslint/eslint-plugin": "^8.32.1",
+        "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
+        "@typescript-eslint/parser": "^8.32.1",
+        "dotenv": "^16.5.0",
+        "eslint": "^8.56.0",
+        "typescript": "^5.3.3"
+    }
+}

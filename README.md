@@ -56,29 +56,32 @@ Here are some of the ACID compliance tests I've been running from my terminal:
 
 ### Test 1: Concurrent increments
  Expected: All requests succeed, counter increases by exact number of requests
+```
 for i in {1..100}; do
   curl -X POST $API_URL -d '{"action":"increment"}' &
 done
 wait
+```
 Verify: Counter increased by exactly 100
 
 ### Test 2: Mixed concurrent operations
-for i in {1..50}; do
+```for i in {1..50}; do
   curl -X POST $API_URL -d '{"action":"increment"}' &
   curl -X POST $API_URL -d '{"action":"decrement"}' &
 done
 wait
-- Verify: Net change is 0
+```
+Verify: Net change is 0
 
-- Test 3: Boundary race conditions
-- Set counter to 999,999,999, then try 10 concurrent increments
-- Expected: Only 1 succeeds, others fail gracefully
+### Test 3: Boundary race conditions
+ Set counter to 999,999,999, then try 10 concurrent increments
+ Expected: Only 1 succeeds, others fail gracefully
 Boundary Condition Tests
-bash# Test 1: Zero boundary
-curl -X POST $API_URL -d '{"action":"decrement"}' # when count = 0
-- Expected: Error, count stays 0
+```
+curl -X POST $API_URL -d '{"action":"decrement"}' # when count = 0 ```
+Expected: Error, count stays 0
 
-# Test 4: Burst requests
+### Test 4: Burst requests
 for i in {1..100}; do
   curl -X POST $API_URL -d '{"action":"increment"}'
 done

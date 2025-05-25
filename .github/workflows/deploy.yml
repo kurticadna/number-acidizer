@@ -119,11 +119,18 @@ jobs:
             sleep 10
           fi
 
-          # Import existing resources to terraform (except Lambda)
+          # Check if S3 bucket exists and delete it if so (force recreate)
+          if aws s3 ls s3://acidizer-$ENV-frontend 2>/dev/null; then
+            echo "S3 bucket exists, deleting to recreate..."
+            aws s3 rm s3://acidizer-$ENV-frontend --recursive
+            aws s3 rb s3://acidizer-$ENV-frontend
+            sleep 5
+          fi
+
+          # Import existing resources to terraform (except Lambda and S3)
           terraform import aws_ecr_repository.backend acidizer-$ENV-backend 2>/dev/null || true
           terraform import aws_dynamodb_table.counter acidizer-$ENV-counter 2>/dev/null || true
           terraform import aws_iam_role.lambda_role acidizer-$ENV-lambda-role 2>/dev/null || true
-          terraform import aws_s3_bucket.frontend acidizer-$ENV-frontend 2>/dev/null || true
 
       # Step 3: Deploy backend infrastructure
       - name: Deploy backend infrastructure

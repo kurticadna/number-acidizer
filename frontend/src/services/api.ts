@@ -1,12 +1,13 @@
 import { BackendResponse, CountResponse, ApiError } from '../types/api'
 
-const API_URL = (() => {
-  const url = process.env.NEXT_PUBLIC_API_URL
-  if (!url) {
-    throw new Error('NEXT_PUBLIC_API_URL environment variable is required')
+function getApiUrl(): string {
+    const url = process.env.NEXT_PUBLIC_API_URL
+    if (!url) {
+      throw new ApiError(500, 'API URL not configured. Please contact support.')
+    }
+    return url
   }
-  return url
-})()
+
 
 const defaultHeaders = {
   'Content-Type': 'application/json',
@@ -41,6 +42,7 @@ const handleApiResponse = async (response: Response): Promise<BackendResponse> =
 export const api = {
   async getCount(): Promise<CountResponse> {
     try {
+      const API_URL = getApiUrl()
       const response = await fetchWithDefaults(API_URL)
       const data = await handleApiResponse(response)
       return { count: data.value || 0 }
@@ -52,6 +54,7 @@ export const api = {
 
   async updateCount(action: 'increment' | 'decrement'): Promise<CountResponse> {
     try {
+      const API_URL = getApiUrl()
       const response = await fetchWithDefaults(API_URL, {
         method: 'POST',
         body: JSON.stringify({ action })

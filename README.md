@@ -39,3 +39,59 @@ dev Branch: This branch is used for active development. All new features, bug fi
 
 main Branch: The main branch represents the stable production version of the project. Only code that has been fully tested and verified in the dev branch is merged into main.
 
+## Authorization solution
+
+I'd recommend AWS Cognito with Google social login for the counter website users. The approach balances complexity well because users just click "Sign in with Google" once, no passwords or forms to fill out, while anonymous users can still use the counter without any friction. For granularity, anonymous users would keep the current 10 requests/sec limit, but signed-in users could get 100 requests, which is meaningful for people who want to use the counter frequently.
+
+Implementation-wise, it's really straightforward because Cognito integrates directly with API Gateway, so my Lambda function just receives a user ID when someone is logged in - no complex session management or custom authentication flows to build. 
+
+## ACID Tests
+
+
+- Lost operations: Counter doesn't increase by exact number of requests
+- Race conditions: Inconsistent results across multiple test runs
+- Boundary violations: Counter goes below 0 or above 1 billion
+
+Here are some of the ACID compliance tests I've been running from my terminal:
+
+# Test 1: Concurrent increments
+# Expected: All requests succeed, counter increases by exact number of requests
+for i in {1..100}; do
+  curl -X POST $API_URL -d '{"action":"increment"}' &
+done
+wait
+- Verify: Counter increased by exactly 100
+
+# Test 2: Mixed concurrent operations
+for i in {1..50}; do
+  curl -X POST $API_URL -d '{"action":"increment"}' &
+  curl -X POST $API_URL -d '{"action":"decrement"}' &
+done
+wait
+- Verify: Net change is 0
+
+# Test 3: Boundary race conditions
+# Set counter to 999,999,999, then try 10 concurrent increments
+# Expected: Only 1 succeeds, others fail gracefully
+Boundary Condition Tests
+bash# Test 1: Zero boundary
+curl -X POST $API_URL -d '{"action":"decrement"}' # when count = 0
+- Expected: Error, count stays 0
+
+# Test 4: Burst requests
+for i in {1..100}; do
+  curl -X POST $API_URL -d '{"action":"increment"}'
+done
+- Expected: Some requests get 429 (rate limited)
+
+# Test 5: Invalid action
+curl -X POST $API_URL -d '{"action":"incrementtt"'
+- Expected: 400 Bad Request
+
+# Test 6: Cross-Tab Sync Tests
+- Open 5 tabs, click increment in tab 1
+- Verify: All tabs show updated number within 7 seconds
+
+- Test multiple rapid clicks across tabs
+- Verify: Each click registers exactly once
+

@@ -79,14 +79,16 @@ Verify: Net change is 0
 Boundary Condition Tests
 
 ```curl -X POST $API_URL -d '{"action":"decrement"}' # 
-when count = 0 ```
+when count = 0
+```
 Expected: Error, count stays 0
 
 ### Test 4: Burst requests
 
 ```for i in {1..100}; do
   curl -X POST $API_URL -d '{"action":"increment"}'
-done```
+done
+```
 Expected: Some requests get 429 (rate limited)
 
 ### Test 5: Invalid action

@@ -44,6 +44,11 @@ resource "aws_api_gateway_rest_api" "api" {
   }
 }
 
+# API Key for rate limiting
+resource "aws_api_gateway_api_key" "acidizer_key" {
+  name = "${local.name}-api-key"
+}
+
 # Throttling configuration
 resource "aws_api_gateway_usage_plan" "api_plan" {
   name = "${local.name}-usage-plan"
@@ -53,15 +58,16 @@ resource "aws_api_gateway_usage_plan" "api_plan" {
     burst_limit = 20   # 20 burst capacity
   }
 
-  quota_settings {
-    limit  = 10000     # 10k requests per day
-    period = "DAY"
-  }
-
   api_stages {
     api_id = aws_api_gateway_rest_api.api.id
     stage  = aws_api_gateway_deployment.api.stage_name
   }
+}
+
+resource "aws_api_gateway_usage_plan_key" "api_plan_key" {
+  key_id        = aws_api_gateway_api_key.acidizer_key.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.api_plan.id
 }
 
 # Request validator for size limits
@@ -140,6 +146,20 @@ resource "aws_api_gateway_deployment" "api" {
   ]
 }
 
+resource "aws_api_gateway_method_settings" "api_throttling" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_deployment.api.stage_name
+  method_path = "*/*"
+
+  settings {
+    throttling_rate_limit  = 10   # 10 requests per second
+    throttling_burst_limit = 20   # 20 burst capacity
+    logging_level          = "INFO"
+    data_trace_enabled     = true
+    metrics_enabled        = true
+  }
+}
+
 # Frontend S3 bucket
 resource "aws_s3_bucket" "frontend" {
   bucket = "${local.name}-frontend"
@@ -166,7 +186,6 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
     key = "index.html"  # SPA fallback
   }
 }
-
 
 resource "aws_s3_bucket_policy" "frontend" {
   bucket     = aws_s3_bucket.frontend.id
@@ -260,4 +279,10 @@ output "frontend_bucket" {
 output "frontend_url" {
   value       = "https://${aws_cloudfront_distribution.frontend.domain_name}"
   description = "Frontend CloudFront URL"
+}
+
+output "api_key" {
+  value       = aws_api_gateway_api_key.acidizer_key.value
+  description = "API Key for rate limiting"
+  sensitive   = true
 }
